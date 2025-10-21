@@ -5,23 +5,21 @@ URL shortener developed using React.js, Node.js, Express.js and MongoDB. Convert
 ## Structure
 
 . 
-├── url-shortener-backend/
-│ ├── package-lock.json 
-│ ├── package.json 
-│ └── server.js 
-├── url-shortener-frontend/
-│ ├── public/ 
-│ │ ├── index.html 
-│ │ └── manifest.json 
-│ └── src/ 
-│   ├── App.css 
-│   ├── App.js 
-│   ├── App.test.js 
-│   ├── index.css 
-│   └── index.js 
+├── url-shortener-backend/<br />
+│ ├── package-lock.json <br />
+│ ├── package.json <br />
+│ └── server.js <br />
+├── url-shortener-frontend/ <br />
+│ ├── public/ <br />
+│ │ ├── index.html <br />
+│ │ └── manifest.json <br />
+│ └── src/ <br />
+│   ├── App.css <br />
+│   ├── App.js <br />
+│   ├── App.test.js <br />
+│   ├── index.css <br />
+│   └── index.js <br />
 └── package.json
-
-
 
 ## How it works?
 
