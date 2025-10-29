@@ -2,6 +2,8 @@
 
 URL shortener developed using React.js, Node.js, Express.js and MongoDB. Converts any provided link into a short URL by designating a 6-digit HEX code to it.
 
+Live: http://quicklink.aryanbhardwaj.xyz
+
 ## Structure
 
 ```
