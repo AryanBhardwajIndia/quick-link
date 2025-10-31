@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route, useParams } from 'react-router-dom';
 import { Copy, Link, ExternalLink } from 'lucide-react';
 import './App.css';
 
-const API_URL = 'https://t4vyk9byu0.execute-api.eu-north-1.amazonaws.com';
+const API_URL = 'https://quick-link-api.onrender.com';
 
 function URLShortenerHome() {
   const [url, setUrl] = useState('');
