@@ -5,41 +5,56 @@ const crypto = require('crypto');
 
 const app = express();
 
-app.use(cors());
+app.use(cors({
+  origin: process.env.FRONTEND_URL || '*',
+  credentials: true
+}));
 app.use(express.json());
 
-mongoose.connect('mongodb://localhost:27017/urlshortener', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-.then(() => console.log('MongoDB connected'))
-.catch(err => console.error('MongoDB connection error:', err));
+let cachedDb = null;
+
+async function connectToDatabase() {
+  if (cachedDb && mongoose.connection.readyState === 1) {
+    return cachedDb;
+  }
+
+  try {
+    await mongoose.connect(process.env.MONGODB_URI, {
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+    });
+
+    cachedDb = mongoose.connection;
+    console.log('Connected to MongoDB');
+    return cachedDb;
+  } catch (error) {
+    console.error('MongoDB connection error:', error);
+    throw error;
+  }
+}
 
 const urlSchema = new mongoose.Schema({
-  originalUrl: {
-    type: String,
-    required: true,
-  },
-  shortCode: {
-    type: String,
-    required: true,
-    unique: true,
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
-  clicks: {
-    type: Number,
-    default: 0,
-  },
+  originalUrl: { type: String, required: true },
+  shortCode: { type: String, required: true, unique: true },
+  createdAt: { type: Date, default: Date.now },
+  clicks: { type: Number, default: 0 },
 });
 
-const Url = mongoose.model('Url', urlSchema);
+const Url = mongoose.models.Url || mongoose.model('Url', urlSchema);
 
 function generateShortCode() {
   return crypto.randomBytes(3).toString('hex');
 }
+
+const BASE_URL = process.env.BASE_URL || 'https://quicklink.aryanbhardwaj.xyz';
+
+// Connect to DB on startup
+connectToDatabase();
+
+// Routes
+app.get('/', (req, res) => {
+  res.json({ message: 'URL Shortener API is running' });
+});
 
 app.post('/api/shorten', async (req, res) => {
   try {
@@ -59,7 +74,7 @@ app.post('/api/shorten', async (req, res) => {
 
     if (url) {
       return res.json({
-        shortUrl: `http://localhost:5002/${url.shortCode}`,
+        shortUrl: `${BASE_URL}/${url.shortCode}`,
         shortCode: url.shortCode,
       });
     }
@@ -72,19 +87,15 @@ app.post('/api/shorten', async (req, res) => {
       exists = await Url.findOne({ shortCode });
     }
 
-    url = new Url({
-      originalUrl,
-      shortCode,
-    });
-
+    url = new Url({ originalUrl, shortCode });
     await url.save();
 
     res.json({
-      shortUrl: `http://localhost:5002/${shortCode}`,
+      shortUrl: `${BASE_URL}/${shortCode}`,
       shortCode: shortCode,
     });
   } catch (error) {
-    console.error('Error shortening URL:', error);
+    console.error('Error:', error);
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -92,7 +103,6 @@ app.post('/api/shorten', async (req, res) => {
 app.get('/:shortCode', async (req, res) => {
   try {
     const { shortCode } = req.params;
-
     const url = await Url.findOne({ shortCode });
 
     if (!url) {
@@ -102,9 +112,9 @@ app.get('/:shortCode', async (req, res) => {
     url.clicks += 1;
     await url.save();
 
-    res.redirect(url.originalUrl);
+    res.json({ originalUrl: url.originalUrl });
   } catch (error) {
-    console.error('Error redirecting:', error);
+    console.error('Error:', error);
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -112,7 +122,6 @@ app.get('/:shortCode', async (req, res) => {
 app.get('/api/stats/:shortCode', async (req, res) => {
   try {
     const { shortCode } = req.params;
-
     const url = await Url.findOne({ shortCode });
 
     if (!url) {
@@ -126,12 +135,12 @@ app.get('/api/stats/:shortCode', async (req, res) => {
       createdAt: url.createdAt,
     });
   } catch (error) {
-    console.error('Error fetching stats:', error);
+    console.error('Error:', error);
     res.status(500).json({ error: 'Server error' });
   }
 });
 
-const PORT = process.env.PORT || 5002;
+const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
