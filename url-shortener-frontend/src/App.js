@@ -129,40 +129,31 @@ function URLShortenerHome() {
 function RedirectHandler() {
   const { shortCode } = useParams();
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const redirect = async () => {
       try {
+        // Fetch the original URL from the API
         const response = await fetch(`${API_URL}/${shortCode}`);
-        const data = await response.json();
         
-        if (response.ok && data.originalUrl) {
-          // JavaScript redirect - works perfectly with CORS
-          window.location.href = data.originalUrl;
+        if (response.redirected) {
+          // If API returns redirect, follow it
+          window.location.href = response.url;
         } else {
-          setError('Short link not found');
-          setLoading(false);
+          const data = await response.json();
+          if (response.ok && data.originalUrl) {
+            window.location.href = data.originalUrl;
+          } else {
+            setError('Short link not found');
+          }
         }
       } catch (err) {
-        console.error('Redirect error:', err);
         setError('Failed to redirect. Please try again.');
-        setLoading(false);
       }
     };
 
     redirect();
   }, [shortCode]);
-
-  if (loading) {
-    return (
-      <div className="container">
-        <div className="card">
-          <p>Redirecting...</p>
-        </div>
-      </div>
-    );
-  }
 
   if (error) {
     return (
@@ -176,7 +167,13 @@ function RedirectHandler() {
     );
   }
 
-  return null;
+  return (
+    <div className="container">
+      <div className="card">
+        <p>Redirecting...</p>
+      </div>
+    </div>
+  );
 }
 
 export default function App() {
