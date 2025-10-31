@@ -9,7 +9,7 @@ export default function URLShortener() {
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
 
-  const API_URL = 'http://localhost:5002/api';
+  const API_URL = 'https://t4vyk9byu0.execute-api.eu-north-1.amazonaws.com';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
