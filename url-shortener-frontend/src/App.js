@@ -1,15 +1,16 @@
 import { useState } from 'react';
+import { BrowserRouter, Routes, Route, useParams, useEffect } from 'react-router-dom';
 import { Copy, Link, ExternalLink } from 'lucide-react';
 import './App.css';
 
-export default function URLShortener() {
+const API_URL = 'https://t4vyk9byu0.execute-api.eu-north-1.amazonaws.com';
+
+function URLShortenerHome() {
   const [url, setUrl] = useState('');
   const [shortUrl, setShortUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
-
-  const API_URL = 'https://t4vyk9byu0.execute-api.eu-north-1.amazonaws.com';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -29,7 +30,9 @@ export default function URLShortener() {
       const data = await response.json();
 
       if (response.ok) {
-        setShortUrl(data.shortUrl);
+        // Replace API URL with frontend URL for display
+        const frontendShortUrl = data.shortUrl.replace(API_URL, window.location.origin);
+        setShortUrl(frontendShortUrl);
       } else {
         setError(data.error || 'Failed to shorten URL');
       }
@@ -119,5 +122,67 @@ export default function URLShortener() {
         )}
       </div>
     </div>
+  );
+}
+
+// Redirect component that handles short codes
+function RedirectHandler() {
+  const { shortCode } = useParams();
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const redirect = async () => {
+      try {
+        // Fetch the original URL from the API
+        const response = await fetch(`${API_URL}/${shortCode}`);
+        
+        if (response.redirected) {
+          // If API returns redirect, follow it
+          window.location.href = response.url;
+        } else {
+          const data = await response.json();
+          if (response.ok && data.originalUrl) {
+            window.location.href = data.originalUrl;
+          } else {
+            setError('Short link not found');
+          }
+        }
+      } catch (err) {
+        setError('Failed to redirect. Please try again.');
+      }
+    };
+
+    redirect();
+  }, [shortCode]);
+
+  if (error) {
+    return (
+      <div className="container">
+        <div className="card">
+          <h1>404 - Link Not Found</h1>
+          <p>{error}</p>
+          <a href="/">Go back to home</a>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="container">
+      <div className="card">
+        <p>Redirecting...</p>
+      </div>
+    </div>
+  );
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<URLShortenerHome />} />
+        <Route path="/:shortCode" element={<RedirectHandler />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
