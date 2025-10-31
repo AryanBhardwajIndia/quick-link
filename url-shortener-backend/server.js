@@ -5,10 +5,18 @@ const crypto = require('crypto');
 
 const app = express();
 
-app.use(cors({
-  origin: process.env.FRONTEND_URL || '*',
-  credentials: true
-}));
+// CORS Configuration - Must be before routes
+const corsOptions = {
+  origin: ['https://quicklink.aryanbhardwaj.xyz', 'http://localhost:3000'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+  optionsSuccessStatus: 200
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); // Handle preflight requests
+
 app.use(express.json());
 
 let cachedDb = null;
@@ -100,25 +108,6 @@ app.post('/api/shorten', async (req, res) => {
   }
 });
 
-app.get('/:shortCode', async (req, res) => {
-  try {
-    const { shortCode } = req.params;
-    const url = await Url.findOne({ shortCode });
-
-    if (!url) {
-      return res.status(404).json({ error: 'URL not found' });
-    }
-
-    url.clicks += 1;
-    await url.save();
-
-    res.json({ originalUrl: url.originalUrl });
-  } catch (error) {
-    console.error('Error:', error);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
 app.get('/api/stats/:shortCode', async (req, res) => {
   try {
     const { shortCode } = req.params;
@@ -134,6 +123,32 @@ app.get('/api/stats/:shortCode', async (req, res) => {
       clicks: url.clicks,
       createdAt: url.createdAt,
     });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Wildcard route for short codes - MUST be last
+app.get('/:shortCode', async (req, res) => {
+  try {
+    const { shortCode } = req.params;
+    
+    // Skip if this looks like a special path
+    if (shortCode === 'favicon.ico' || shortCode.includes('.')) {
+      return res.status(404).end();
+    }
+
+    const url = await Url.findOne({ shortCode });
+
+    if (!url) {
+      return res.status(404).json({ error: 'URL not found' });
+    }
+
+    url.clicks += 1;
+    await url.save();
+
+    res.json({ originalUrl: url.originalUrl });
   } catch (error) {
     console.error('Error:', error);
     res.status(500).json({ error: 'Server error' });
