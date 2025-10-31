@@ -18,7 +18,7 @@ export default function URLShortener() {
     setLoading(true);
 
     try {
-      const response = await fetch(`${API_URL}/shorten`, {
+      const response = await fetch(`${API_URL}/api/shorten`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
