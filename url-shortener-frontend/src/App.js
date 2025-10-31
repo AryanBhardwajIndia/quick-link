@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { BrowserRouter, Routes, Route, useParams, useEffect } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, useParams } from 'react-router-dom';
 import { Copy, Link, ExternalLink } from 'lucide-react';
 import './App.css';
 
